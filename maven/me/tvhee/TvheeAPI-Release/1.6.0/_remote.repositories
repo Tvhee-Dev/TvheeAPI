@@ -1,4 +1,4 @@
 #NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
-#Sun Jul 04 12:44:46 CEST 2021
-TvheeAPI-1.6.0.jar>tvhee=
-TvheeAPI-1.6.0.pom>tvhee=
+#Sun Jul 04 17:05:23 CEST 2021
+TvheeAPI-Release-1.6.0.jar>=
+TvheeAPI-Release-1.6.0.pom>=
