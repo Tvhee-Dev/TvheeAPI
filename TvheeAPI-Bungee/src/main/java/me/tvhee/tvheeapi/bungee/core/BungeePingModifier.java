@@ -19,6 +19,7 @@ import me.tvhee.tvheeapi.api.serverping.Hover;
 import me.tvhee.tvheeapi.api.serverping.Motd;
 import me.tvhee.tvheeapi.api.serverping.ServerPing;
 import me.tvhee.tvheeapi.core.TvheeAPICore;
+import net.md_5.bungee.api.Favicon;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.ServerPing.PlayerInfo;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -117,6 +118,8 @@ public final class BungeePingModifier implements Listener
 		}
 
 		bungeePing.setVersion(new net.md_5.bungee.api.ServerPing.Protocol(serverPing.getProtocolName() == null ? "" : serverPing.getProtocolName().toLegacyText(MessageType.PROTOCOL_LINE), serverPing.getProtocolVersion() == -1 ? 755 : serverPing.getProtocolVersion()));
+		bungeePing.setFavicon(Favicon.create(serverPing.getFavicon()));
+
 		e.setResponse(bungeePing);
 	}
 }
