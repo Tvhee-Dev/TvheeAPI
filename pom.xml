@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>me.tvhee</groupId>
+    <artifactId>TvheeAPI</artifactId>
+    <packaging>pom</packaging>
+    <version>1.6.0</version>
+    <modules>
+        <module>TvheeAPI-API</module>
+        <module>TvheeAPI-Bungee</module>
+        <module>TvheeAPI-Spigot</module>
+        <module>TvheeAPI-Release</module>
+    </modules>
+
+    <properties>
+        <java.version>16</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+</project>
