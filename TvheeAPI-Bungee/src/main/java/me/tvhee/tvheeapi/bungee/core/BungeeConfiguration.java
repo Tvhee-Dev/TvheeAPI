@@ -44,9 +44,6 @@ public final class BungeeConfiguration implements Configuration
 	@Override
 	public void setComments(String key, List<String> comments)
 	{
-		if(key == null)
-			commentLoader.setComments(key, null);
-
 		commentLoader.setComments(key, comments);
 	}
 
@@ -193,6 +190,7 @@ public final class BungeeConfiguration implements Configuration
 		if(object instanceof Map)
 		{
 			Map<String, Object> valuesMap = (Map<String, Object>) object;
+
 			if(valuesMap.containsKey("=="))
 				return ConfigurationSerialization.deserialize(valuesMap);
 		}

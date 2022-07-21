@@ -82,6 +82,11 @@ public final class Component
 		this.center = center;
 	}
 
+	public boolean isNullOrEmpty()
+	{
+		return text == null || text.isEmpty();
+	}
+
 	public Component setText(String text)
 	{
 		this.text = text;
@@ -116,6 +121,11 @@ public final class Component
 		return this.text;
 	}
 
+	public TextComponent toChatComponent()
+	{
+		return new TextComponent(toLegacyText());
+	}
+
 	public TextComponent toChatComponent(MessageType centerType)
 	{
 		return new TextComponent(toLegacyText(centerType));
@@ -124,6 +134,11 @@ public final class Component
 	public Component duplicate()
 	{
 		return new Component(this);
+	}
+
+	public String toLegacyText()
+	{
+		return toLegacyText(null);
 	}
 	
 	public String toLegacyText(MessageType centerType)
@@ -173,7 +188,7 @@ public final class Component
 
 		if(prefix != null)
 		{
-			String legacyPrefix = TvheeAPI.getInstance().getPrefix().toLegacyText(null);
+			String legacyPrefix = TvheeAPI.getInstance().getPrefix().toLegacyText();
 
 			if(text.startsWith(legacyPrefix))
 			{

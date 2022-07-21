@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -14,21 +13,22 @@ import me.tvhee.tvheeapi.api.command.ConsoleCommandSender;
 import me.tvhee.tvheeapi.api.command.SimpleCommandExecutor;
 import me.tvhee.tvheeapi.api.config.Configuration;
 import me.tvhee.tvheeapi.api.exception.TvheeAPIInternalException;
-import me.tvhee.tvheeapi.api.files.CustomFile;
+import me.tvhee.tvheeapi.api.file.CustomFile;
 import me.tvhee.tvheeapi.api.player.Player;
 import me.tvhee.tvheeapi.api.plugin.PluginManager;
 import me.tvhee.tvheeapi.api.scheduler.Scheduler;
-import me.tvhee.tvheeapi.core.TvheeAPILoader;
+import me.tvhee.tvheeapi.core.TvheeAPIModule;
 import me.tvhee.tvheeapi.core.TvheeAPIPluginLoader;
 import me.tvhee.tvheeapi.spigot.api.crafting.CraftingRecipe;
 import me.tvhee.tvheeapi.spigot.api.event.SpigotListener;
+import me.tvhee.tvheeapi.spigot.api.menu.MenuListener;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class BukkitPluginLoader extends JavaPlugin implements TvheeAPILoader
+public final class BukkitPluginLoader extends JavaPlugin implements TvheeAPIModule
 {
 	private static boolean instanceCreated = false;
 	private final PluginManager pluginManager;
@@ -44,7 +44,7 @@ public final class BukkitPluginLoader extends JavaPlugin implements TvheeAPILoad
 	}
 
 	@Override
-	public final void onLoad()
+	public void onLoad()
 	{
 		try
 		{
@@ -73,7 +73,7 @@ public final class BukkitPluginLoader extends JavaPlugin implements TvheeAPILoad
 	}
 
 	@Override
-	public final void onEnable()
+	public void onEnable()
 	{
 		if(!tvheeAPIPluginLoader.getDescription().getApiVersion().isSupported())
 		{
@@ -83,8 +83,7 @@ public final class BukkitPluginLoader extends JavaPlugin implements TvheeAPILoad
 		}
 
 		this.tvheeAPIPluginLoader.enablePlugin();
-
-		pluginManager.registerListener(new BukkitPingModifier());
+		getServer().getPluginManager().registerEvents(new MenuListener(), this);
 
 		for(String spigotListener : tvheeAPIPluginLoader.getDescription().getSpigotListeners())
 		{
@@ -102,7 +101,7 @@ public final class BukkitPluginLoader extends JavaPlugin implements TvheeAPILoad
 	}
 
 	@Override
-	public final void onDisable()
+	public void onDisable()
 	{
 		CraftingRecipe.unregisterAll();
 
@@ -111,7 +110,7 @@ public final class BukkitPluginLoader extends JavaPlugin implements TvheeAPILoad
 	}
 
 	@Override
-	public final String toString()
+	public String toString()
 	{
 		return "TvheeAPIPlugin {" + getDescription().getName() + " " + getDescription().getVersion() + "}";
 	}
@@ -147,7 +146,7 @@ public final class BukkitPluginLoader extends JavaPlugin implements TvheeAPILoad
 	}
 
 	@Override
-	public Configuration getYamlConfiguration()
+	public Configuration getConfiguration()
 	{
 		return new BukkitConfiguration();
 	}
@@ -193,7 +192,7 @@ public final class BukkitPluginLoader extends JavaPlugin implements TvheeAPILoad
 	}
 
 	@Override
-	public Collection<Player> getOnlinePlayers()
+	public List<Player> getOnlinePlayers()
 	{
 		List<Player> onlinePlayers = new ArrayList<>();
 

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import me.tvhee.tvheeapi.api.config.ConfigurationSerializable;
 import me.tvhee.tvheeapi.api.exception.TvheeAPIInternalException;
-import me.tvhee.tvheeapi.api.reflection.Reflection;
 
 public final class ConfigurationSerialization
 {
@@ -27,7 +26,7 @@ public final class ConfigurationSerialization
 	{
 		try
 		{
-			Class<?> clazz = Reflection.getClassWithException((String) deserialize.get("=="));
+			Class<?> clazz = Class.forName((String) deserialize.get("=="));
 			Class<? extends ConfigurationSerializable> serializeClass = clazz.asSubclass(ConfigurationSerializable.class);
 
 			if(!classIsRegistered(serializeClass))
@@ -41,7 +40,7 @@ public final class ConfigurationSerialization
 
 			return null;
 		}
-		catch(ClassCastException e)
+		catch(ClassCastException | ClassNotFoundException e)
 		{
 			throw new TvheeAPIInternalException(ConfigurationSerialization.class, "deserialize", "Class is not instance of " + ConfigurationSerializable.class.getName() + "!");
 		}

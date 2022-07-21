@@ -12,7 +12,7 @@ public class BungeeCommandSender implements CommandSender
 	private final net.md_5.bungee.api.CommandSender bungeeSender;
 	private boolean op;
 
-	public BungeeCommandSender(net.md_5.bungee.api.CommandSender bungeeSender)
+	BungeeCommandSender(net.md_5.bungee.api.CommandSender bungeeSender)
 	{
 		this.bungeeSender = bungeeSender;
 	}

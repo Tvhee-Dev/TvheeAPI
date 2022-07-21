@@ -9,21 +9,27 @@ import me.tvhee.tvheeapi.api.annotations.Require;
 import me.tvhee.tvheeapi.api.config.Configuration;
 import me.tvhee.tvheeapi.api.description.PluginDescription;
 import me.tvhee.tvheeapi.api.exception.TvheeAPIException;
-import me.tvhee.tvheeapi.api.files.YamlConfigFile;
-import me.tvhee.tvheeapi.core.UniversalPluginLoader;
+import me.tvhee.tvheeapi.api.file.ConfigFile;
+import me.tvhee.tvheeapi.core.TvheeAPIModule;
 
 @Require(PluginMain.class)
 public abstract class TvheeAPIPlugin
 {
-	public final TvheeAPI api = TvheeAPI.getInstance();
-	private static UniversalPluginLoader universalPluginLoader;
+	public final TvheeAPI api;
 	private static TvheeAPIPlugin instance;
+	private TvheeAPIModule universalPluginLoader;
+
 	private boolean enabled = false;
 	private boolean init = false;
 	private Logger logger;
 	private PluginDescription description;
 	private File dataFolder;
-	private YamlConfigFile config;
+	private ConfigFile config;
+
+	protected TvheeAPIPlugin()
+	{
+		this.api = TvheeAPI.getInstance();
+	}
 
 	public static TvheeAPIPlugin getInstance()
 	{
@@ -32,17 +38,17 @@ public abstract class TvheeAPIPlugin
 
 	public static Object getPlugin()
 	{
-		return universalPluginLoader == null ? new Object() : universalPluginLoader;
+		return instance.universalPluginLoader;
 	}
 
-	public final void init(UniversalPluginLoader universalPluginLoader, Logger logger, PluginDescription description, File dataFolder)
+	public final void init(TvheeAPIModule plugin, Logger logger, PluginDescription description, File dataFolder)
 	{
 		if(init)
 			throw new TvheeAPIException(getClass(), "init", "Please do not init the plugin again!");
 		else
 			init = true;
 
-		TvheeAPIPlugin.universalPluginLoader = universalPluginLoader;
+		this.universalPluginLoader = plugin;
 		this.logger = logger;
 		this.description = description;
 		this.dataFolder = dataFolder;
@@ -51,7 +57,7 @@ public abstract class TvheeAPIPlugin
 
 	public final void onLoad()
 	{
-		this.config = api.getFile("config.yml").getAsYaml();
+		this.config = new ConfigFile(getDataFolder(), "config.yml");
 
 		onPluginLoad();
 	}
@@ -130,5 +136,10 @@ public abstract class TvheeAPIPlugin
 	public final void setEnabled(boolean enabled)
 	{
 		this.enabled = enabled;
+	}
+
+	public final TvheeAPI getApi()
+	{
+		return TvheeAPI.getInstance();
 	}
 }

@@ -1,17 +1,20 @@
 package me.tvhee.tvheeapi.core;
 
-import java.util.Collection;
+import java.io.File;
+import java.io.InputStream;
+import java.util.List;
 import java.util.UUID;
+import java.util.logging.Logger;
 import me.tvhee.tvheeapi.api.command.ConsoleCommandSender;
 import me.tvhee.tvheeapi.api.config.Configuration;
-import me.tvhee.tvheeapi.api.files.CustomFile;
+import me.tvhee.tvheeapi.api.file.CustomFile;
 import me.tvhee.tvheeapi.api.player.Player;
 import me.tvhee.tvheeapi.api.plugin.PluginManager;
 import me.tvhee.tvheeapi.api.scheduler.Scheduler;
 
-public interface TvheeAPILoader extends UniversalPluginLoader
+public interface TvheeAPIModule
 {
-	Configuration getYamlConfiguration();
+	Configuration getConfiguration();
 
 	Player getPlayer(String name);
 
@@ -23,7 +26,21 @@ public interface TvheeAPILoader extends UniversalPluginLoader
 
 	Scheduler getScheduler();
 
-	Collection<Player> getOnlinePlayers();
+	List<Player> getOnlinePlayers();
 
 	void updatePluginFile(CustomFile newVersion);
+
+	InputStream getDescriptionResource();
+
+	InputStream getResource(String name);
+
+	File getDataFolder();
+
+	Logger getDefaultLogger();
+
+	Logger getServerLogger();
+
+	boolean isBukkit();
+
+	boolean isBungee();
 }

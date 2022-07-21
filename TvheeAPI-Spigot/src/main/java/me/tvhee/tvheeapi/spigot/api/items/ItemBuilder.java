@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import me.tvhee.tvheeapi.api.chat.Component;
+import me.tvhee.tvheeapi.api.collection.CollectionUtil;
 import me.tvhee.tvheeapi.api.exception.TvheeAPIInternalException;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
-import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
@@ -20,7 +20,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 
 public final class ItemBuilder
 {
-	private ItemStack itemStack;
+	private final ItemStack itemStack;
 
 	public ItemBuilder(Material material)
 	{
@@ -53,8 +53,7 @@ public final class ItemBuilder
 
 	public ItemBuilder setDurability(int durability)
 	{
-		DurabilityCalculator durabilityCalculator = new DurabilityCalculator(itemStack, durability);
-		this.itemStack = durabilityCalculator.getItem();
+		new DurabilityCalculator(itemStack).setMaxDurability(durability);
 		return this;
 	}
 
@@ -67,10 +66,10 @@ public final class ItemBuilder
 
 	public ItemBuilder setName(Component name)
 	{
-		ItemMeta im = itemStack.getItemMeta();
-		im.setDisplayName(name.toLegacyText(null));
-		im.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_DESTROYS);
-		itemStack.setItemMeta(im);
+		ItemMeta itemMeta = itemStack.getItemMeta();
+		itemMeta.setDisplayName(name.toLegacyText(null));
+		itemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_DESTROYS);
+		itemStack.setItemMeta(itemMeta);
 		return this;
 	}
 
@@ -147,7 +146,7 @@ public final class ItemBuilder
 	 * @return Return to ItemBuilder
 	 */
 
-	public ItemBuilder addEnchant(Enchantment enchantment, int level)
+	public ItemBuilder addEnchantment(Enchantment enchantment, int level)
 	{
 		ItemMeta im = itemStack.getItemMeta();
 		im.addEnchant(enchantment, level, true);
@@ -189,11 +188,11 @@ public final class ItemBuilder
 	 * @return Return to ItemBuilder
 	 */
 
-	public ItemBuilder setLore(String... lore)
+	public ItemBuilder setLore(Component... lore)
 	{
-		ItemMeta im = itemStack.getItemMeta();
-		im.setLore(Arrays.asList(lore));
-		itemStack.setItemMeta(im);
+		ItemMeta itemMeta = itemStack.getItemMeta();
+		itemMeta.setLore(CollectionUtil.convertList(Arrays.asList(lore), Component::toLegacyText));
+		itemStack.setItemMeta(itemMeta);
 		return this;
 	}
 
@@ -204,11 +203,11 @@ public final class ItemBuilder
 	 * @return Return to ItemBuilder
 	 */
 
-	public ItemBuilder setLore(List<String> lore)
+	public ItemBuilder setLore(List<Component> lore)
 	{
-		ItemMeta im = itemStack.getItemMeta();
-		im.setLore(lore);
-		itemStack.setItemMeta(im);
+		ItemMeta itemMeta = itemStack.getItemMeta();
+		itemMeta.setLore(CollectionUtil.convertList(lore, Component::toLegacyText));
+		itemStack.setItemMeta(itemMeta);
 		return this;
 	}
 
@@ -219,15 +218,17 @@ public final class ItemBuilder
 	 * @return Return to ItemBuilder
 	 */
 
-	public ItemBuilder removeLoreLine(String line)
+	public ItemBuilder removeLoreLine(Component line)
 	{
-		ItemMeta im = itemStack.getItemMeta();
-		List<String> lore = new ArrayList<>(im.getLore());
-		if(!lore.contains(line))
+		ItemMeta itemMeta = itemStack.getItemMeta();
+		List<String> lore = new ArrayList<>(itemMeta.getLore());
+
+		if(!lore.contains(line.toLegacyText()))
 			return this;
-		lore.remove(line);
-		im.setLore(lore);
-		itemStack.setItemMeta(im);
+
+		lore.remove(line.toLegacyText());
+		itemMeta.setLore(lore);
+		itemStack.setItemMeta(itemMeta);
 		return this;
 	}
 
@@ -240,13 +241,15 @@ public final class ItemBuilder
 
 	public ItemBuilder removeLoreLine(int index)
 	{
-		ItemMeta im = itemStack.getItemMeta();
-		List<String> lore = new ArrayList<>(im.getLore());
+		ItemMeta itemMeta = itemStack.getItemMeta();
+		List<String> lore = new ArrayList<>(itemMeta.getLore());
+
 		if(index < 0 || index > lore.size())
 			return this;
+
 		lore.remove(index);
-		im.setLore(lore);
-		itemStack.setItemMeta(im);
+		itemMeta.setLore(lore);
+		itemStack.setItemMeta(itemMeta);
 		return this;
 	}
 
@@ -257,15 +260,17 @@ public final class ItemBuilder
 	 * @return Return to ItemBuilder
 	 */
 
-	public ItemBuilder addLoreLine(String line)
+	public ItemBuilder addLoreLine(Component line)
 	{
-		ItemMeta im = itemStack.getItemMeta();
+		ItemMeta itemMeta = itemStack.getItemMeta();
 		List<String> lore = new ArrayList<>();
-		if(im.hasLore())
-			lore = new ArrayList<>(im.getLore());
-		lore.add(line);
-		im.setLore(lore);
-		itemStack.setItemMeta(im);
+
+		if(itemMeta.hasLore())
+			lore = new ArrayList<>(itemMeta.getLore());
+
+		lore.add(line.toLegacyText());
+		itemMeta.setLore(lore);
+		itemStack.setItemMeta(itemMeta);
 		return this;
 	}
 
@@ -277,44 +282,13 @@ public final class ItemBuilder
 	 * @return Return to ItemBuilder
 	 */
 
-	public ItemBuilder addLoreLine(String line, int position)
+	public ItemBuilder addLoreLine(Component line, int position)
 	{
-		ItemMeta im = itemStack.getItemMeta();
-		List<String> lore = new ArrayList<>(im.getLore());
-		lore.set(position, line);
-		im.setLore(lore);
-		itemStack.setItemMeta(im);
-		return this;
-	}
-
-	/**
-	 * Set the color of dye
-	 *
-	 * @param color The color you want to set
-	 * @return Return to ItemBuilder
-	 */
-
-	public ItemBuilder setDyeColor(String color)
-	{
-		color = color.toUpperCase();
-		this.itemStack.setDurability(DyeColor.valueOf(color).getDyeData());
-		return this;
-	}
-
-	/**
-	 * Set the wool color
-	 *
-	 * @param color The color you want to set
-	 * @return Return to ItemBuilder
-	 */
-
-	@Deprecated
-	public ItemBuilder setWoolColor(String color)
-	{
-		color = color.toUpperCase();
-		if(!itemStack.getType().equals(Material.valueOf(color + "_WOOL")))
-			return this;
-		this.itemStack.setDurability(DyeColor.valueOf(color).getDyeData());
+		ItemMeta itemMeta = itemStack.getItemMeta();
+		List<String> lore = new ArrayList<>(itemMeta.getLore());
+		lore.set(position, line.toLegacyText());
+		itemMeta.setLore(lore);
+		itemStack.setItemMeta(itemMeta);
 		return this;
 	}
 
@@ -327,16 +301,9 @@ public final class ItemBuilder
 
 	public ItemBuilder setLeatherArmorColor(Color color)
 	{
-		try
-		{
-			LeatherArmorMeta im = (LeatherArmorMeta) itemStack.getItemMeta();
-			im.setColor(color);
-			itemStack.setItemMeta(im);
-		}
-		catch(ClassCastException e)
-		{
-			throw new TvheeAPIInternalException(getClass(), "setLeatherArmorColor", e);
-		}
+		LeatherArmorMeta itemMeta = (LeatherArmorMeta) itemStack.getItemMeta();
+		itemMeta.setColor(color);
+		itemStack.setItemMeta(itemMeta);
 		return this;
 	}
 
@@ -346,7 +313,7 @@ public final class ItemBuilder
 	 * @return Return the ItemStack
 	 */
 
-	public ItemStack toItemStack()
+	public ItemStack toItem()
 	{
 		return itemStack;
 	}

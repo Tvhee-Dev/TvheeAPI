@@ -54,22 +54,22 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 
 			switch(registrationType)
 			{
-				case COMMAND ->
+				case COMMAND :
 				{
 					TypeElement commandTypeElement = checkType(element, CommandExecutor.class);
 					commands.add(commandTypeElement.getQualifiedName().toString());
 				}
-				case BUNGEE_LISTENER ->
+				case BUNGEE_LISTENER :
 				{
 					TypeElement bungeeListenerTypeElement = checkType(element, BungeeListener.class);
 					bungeeListeners.add(bungeeListenerTypeElement.getQualifiedName().toString());
 				}
-				case SPIGOT_LISTENER ->
+				case SPIGOT_LISTENER :
 				{
 					TypeElement spigotListenerTypeElement = checkType(element, SpigotListener.class);
 					spigotListeners.add(spigotListenerTypeElement.getQualifiedName().toString());
 				}
-				default -> throw new IllegalArgumentException("Unexpected value: " + registrationType);
+				default : throw new IllegalArgumentException("Unexpected value: " + registrationType);
 			}
 		}
 
@@ -226,10 +226,11 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 			final String pluginBungeeYml = main == PluginLoader.BUKKIT_PLUGIN ? "plugin.yml" : "bungee.yml";
 			final Yaml yaml = new Yaml();
 			final FileObject file = this.processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", pluginBungeeYml);
-			try(final Writer writer = file.openWriter())
+
+			try(Writer writer = file.openWriter())
 			{
 				writer.append("#Auto-generated ").append(pluginBungeeYml).append(", generated at ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))).append(" by ").append(this.getClass().getName()).append("\n");
-				final String raw = yaml.dumpAs(yml, Tag.MAP, DumperOptions.FlowStyle.BLOCK);
+				String raw = yaml.dumpAs(yml, Tag.MAP, DumperOptions.FlowStyle.BLOCK);
 				writer.write(raw);
 				writer.flush();
 			}
@@ -245,7 +246,9 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 		final TypeElement typeElement;
 
 		if(element instanceof TypeElement)
+		{
 			typeElement = (TypeElement) element;
+		}
 		else
 		{
 			throwError("Not a class!", element);

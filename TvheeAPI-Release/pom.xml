@@ -7,15 +7,42 @@
     <parent>
         <artifactId>TvheeAPI</artifactId>
         <groupId>me.tvhee</groupId>
-        <version>1.6.0</version>
+        <version>1.7.0</version>
     </parent>
 
     <artifactId>TvheeAPI-Release</artifactId>
 
     <properties>
-        <java.version>16</java.version>
+        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>me.tvhee</groupId>
+            <artifactId>TvheeAPI-API</artifactId>
+            <version>1.7.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>me.tvhee</groupId>
+            <artifactId>TvheeAPI-Spigot</artifactId>
+            <version>1.7.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>me.tvhee</groupId>
+            <artifactId>TvheeAPI-Bungee</artifactId>
+            <version>1.7.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.30</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
@@ -51,20 +78,27 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <verbose>true</verbose>
                     <proc>none</proc>
+                    <annotationProcessors>
+                        <annotationProcessor>me.tvhee.tvheeapi.core.TvheeAPIAnnotationProcessor</annotationProcessor>
+                    </annotationProcessors>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-shade-plugin -->
-                <version>3.2.4</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -76,33 +110,5 @@
             </resource>
         </resources>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>me.tvhee</groupId>
-            <artifactId>TvheeAPI-API</artifactId>
-            <version>1.6.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>me.tvhee</groupId>
-            <artifactId>TvheeAPI-Spigot</artifactId>
-            <version>1.6.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>me.tvhee</groupId>
-            <artifactId>TvheeAPI-Bungee</artifactId>
-            <version>1.6.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>1.28</version>
-            <type>jar</type>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
 
 </project>

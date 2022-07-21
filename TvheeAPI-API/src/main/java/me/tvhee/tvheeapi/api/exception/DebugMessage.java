@@ -1,15 +1,13 @@
 package me.tvhee.tvheeapi.api.exception;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import me.tvhee.tvheeapi.api.files.CustomFile;
+import me.tvhee.tvheeapi.api.file.CustomFile;
 import me.tvhee.tvheeapi.core.TvheeAPILogger;
 import me.tvhee.tvheeapi.api.plugin.TvheeAPIPlugin;
 
@@ -41,42 +39,34 @@ public final class DebugMessage
 		logger.info("Logging exception...");
 
 		String path = DebugMessage.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-		String decodedPath = URLDecoder.decode(path, StandardCharsets.UTF_8);
-		CustomFile file = new CustomFile(new File(decodedPath).getParentFile(), "tvheeapi-exception-logger.txt");
+		String decodedPath;
 
 		try
 		{
-			FileWriter fileWriter = new FileWriter(file, true);
-
-			if(!file.exists())
-			{
-				file.saveDefaultFile();
-				fileWriter.write("##Exception scriptFile created at " + date + " " + hour + " by TvheeAPI. Please check the console to get more information about exceptions");
-			}
-
-			fileWriter.write(getLogMessage());
-			fileWriter.write("\n");
-
-			if(this.cause != null && !this.cause.equals(""))
-			{
-				fileWriter.write(getTimeStamp() + "Message: " + this.cause);
-				fileWriter.write("\n");
-			}
-
-			for(String stackTraceLine : getStackTrace())
-			{
-				fileWriter.write(stackTraceLine);
-				fileWriter.write("\n");
-			}
-
-			fileWriter.append("\n");
-			fileWriter.flush();
-			fileWriter.close();
+			decodedPath = URLDecoder.decode(path, "UTF-8");
 		}
-		catch(IOException e)
+		catch(UnsupportedEncodingException e)
 		{
 			e.printStackTrace();
+			return;
 		}
+
+		CustomFile file = new CustomFile(new File(decodedPath).getParentFile(), "tvheeapi-exception-logger.txt");
+		List<String> content = new ArrayList<>();
+
+		if(!file.exists())
+		{
+			file.createNewFile();
+			content.add("##Exception scriptFile created at " + date + " " + hour + " by TvheeAPI. Please check the console to get more information about exceptions");
+		}
+
+		content.add(getLogMessage());
+
+		if(this.cause != null && !this.cause.equals(""))
+			content.add(getTimeStamp() + "Message: " + this.cause);
+
+		content.addAll(getStackTrace());
+		file.setContent(content);
 	}
 
 	public String getTimeStamp()

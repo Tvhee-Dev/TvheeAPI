@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -20,6 +19,8 @@ import java.util.jar.JarFile;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import me.tvhee.simplereflection.Reflection;
+import me.tvhee.simplereflection.ReflectionUtil;
 import me.tvhee.tvheeapi.api.command.BasicCommandExecutor;
 import me.tvhee.tvheeapi.api.command.CommandExecutor;
 import me.tvhee.tvheeapi.api.command.ConsoleCommandSender;
@@ -27,13 +28,12 @@ import me.tvhee.tvheeapi.api.command.SimpleCommandExecutor;
 import me.tvhee.tvheeapi.api.config.Configuration;
 import me.tvhee.tvheeapi.api.exception.TvheeAPIException;
 import me.tvhee.tvheeapi.api.exception.TvheeAPIInternalException;
-import me.tvhee.tvheeapi.api.files.CustomFile;
+import me.tvhee.tvheeapi.api.file.CustomFile;
 import me.tvhee.tvheeapi.api.player.Player;
 import me.tvhee.tvheeapi.api.plugin.PluginManager;
-import me.tvhee.tvheeapi.api.reflection.Reflection;
 import me.tvhee.tvheeapi.api.scheduler.Scheduler;
 import me.tvhee.tvheeapi.bungee.api.event.BungeeListener;
-import me.tvhee.tvheeapi.core.TvheeAPILoader;
+import me.tvhee.tvheeapi.core.TvheeAPIModule;
 import me.tvhee.tvheeapi.core.TvheeAPIPluginLoader;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -42,7 +42,7 @@ import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.plugin.PluginDescription;
 import org.yaml.snakeyaml.Yaml;
 
-public final class BungeePluginLoader extends Plugin implements TvheeAPILoader
+public final class BungeePluginLoader extends Plugin implements TvheeAPIModule
 {
 	private static boolean instanceCreated = false;
 	private final PluginManager pluginManager;
@@ -58,7 +58,7 @@ public final class BungeePluginLoader extends Plugin implements TvheeAPILoader
 	}
 
 	@Override
-	public final void onLoad()
+	public void onLoad()
 	{
 		try
 		{
@@ -87,11 +87,9 @@ public final class BungeePluginLoader extends Plugin implements TvheeAPILoader
 	}
 
 	@Override
-	public final void onEnable()
+	public void onEnable()
 	{
 		tvheeAPIPluginLoader.enablePlugin();
-
-		pluginManager.registerListener(new BungeePingModifier());
 
 		for(String bungeeListener : tvheeAPIPluginLoader.getDescription().getBungeeListeners())
 		{
@@ -109,14 +107,14 @@ public final class BungeePluginLoader extends Plugin implements TvheeAPILoader
 	}
 
 	@Override
-	public final void onDisable()
+	public void onDisable()
 	{
 		tvheeAPIPluginLoader.getApiLogger().info("Is successfully disabled!");
 		tvheeAPIPluginLoader.disablePlugin();
 	}
 
 	@Override
-	public final String toString()
+	public String toString()
 	{
 		return "TvheeAPIPlugin {" + getDescription().getName() + " " + getDescription().getVersion() + "}";
 	}
@@ -158,7 +156,7 @@ public final class BungeePluginLoader extends Plugin implements TvheeAPILoader
 	}
 
 	@Override
-	public Configuration getYamlConfiguration()
+	public Configuration getConfiguration()
 	{
 		return new BungeeConfiguration();
 	}
@@ -204,7 +202,7 @@ public final class BungeePluginLoader extends Plugin implements TvheeAPILoader
 	}
 
 	@Override
-	public Collection<Player> getOnlinePlayers()
+	public List<Player> getOnlinePlayers()
 	{
 		List<Player> onlinePlayers = new ArrayList<>();
 
@@ -232,9 +230,9 @@ public final class BungeePluginLoader extends Plugin implements TvheeAPILoader
 			getProxy().getLogger().log(Level.SEVERE, "Exception disabling plugin " + getDescription().getName(), t);
 		}
 
-		Map<String, Plugin> loadedPlugins = bungeePluginLoader.getField("plugins").getObject();
+		Map<String, Plugin> loadedPlugins = bungeePluginLoader.field("plugins").object();
 		loadedPlugins.remove(getDescription().getName());
-		bungeePluginLoader.setField("plugins", loadedPlugins);
+		bungeePluginLoader.field("plugins", loadedPlugins);
 
 		File[] jarFiles = getDataFolder().getParentFile().listFiles(pathname -> pathname.getName().endsWith(".jar"));
 
@@ -258,22 +256,23 @@ public final class BungeePluginLoader extends Plugin implements TvheeAPILoader
 					if(pdf == null)
 						throw new NullPointerException("Plugin must have a plugin.yml or bungee.yml");
 
-					PluginDescription pluginDescription = ((Yaml) bungeePluginLoader.getField("yaml").getObject()).loadAs(jar.getInputStream(pdf), PluginDescription.class);
+					PluginDescription pluginDescription = ((Yaml) bungeePluginLoader.field("yaml").object()).loadAs(jar.getInputStream(pdf), PluginDescription.class);
 
 					if(pluginDescription.getName() == null || pluginDescription.getMain() == null)
 						throw new NullPointerException("Plugin from " + file + " must have a main and a name!");
 
 					pluginDescription.setFile(file);
 
-					Set<?> allLoaders = new HashSet<>(Reflection.getStaticField(Reflection.getClass("net.md_5.bungee.api.plugin.PluginClassloader"), "allLoaders").getObject());
+					Reflection pluginClassLoader = new Reflection(ReflectionUtil.getClass("net.md_5.bungee.api.plugin.PluginClassloader"));
+					Set<?> allLoaders = new HashSet<>(pluginClassLoader.field("allLoaders").object());
 					allLoaders.remove(getClass().getClassLoader());
-					Reflection.setStaticField(Reflection.getClass("net.md_5.bungee.api.plugin.PluginClassloader"), "allLoaders", allLoaders);
+					pluginClassLoader.field("allLoaders", allLoaders);
 					((URLClassLoader) getClass().getClassLoader()).close();
 
-					if(!(Boolean) bungeePluginLoader.invokeMethod("enablePlugin", new HashMap<>(), new Stack<>(), pluginDescription).getObject())
+					if(!(boolean) bungeePluginLoader.method("enablePlugin", new HashMap<>(), new Stack<>(), pluginDescription).object())
 						getProxy().getLogger().log(Level.WARNING, "Failed to enable {0}", pluginDescription.getName());
 
-					Map<String, Plugin> plugins = bungeePluginLoader.getField("plugins").getObject();
+					Map<String, Plugin> plugins = bungeePluginLoader.field("plugins").object();
 
 					for(Entry<String, Plugin> entry : plugins.entrySet())
 					{

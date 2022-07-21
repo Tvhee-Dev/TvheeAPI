@@ -25,7 +25,7 @@ public final class BungeePlayer extends BungeeCommandSender implements Player
 	@Override
 	public void kick(Component component)
 	{
-		bungeePlayer.disconnect(component.toChatComponent(MessageType.CHAT_LINE));
+		bungeePlayer.disconnect(component.toChatComponent());
 	}
 
 	@Override

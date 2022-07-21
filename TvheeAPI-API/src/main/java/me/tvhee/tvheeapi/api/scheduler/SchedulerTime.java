@@ -2,7 +2,7 @@ package me.tvhee.tvheeapi.api.scheduler;
 
 public enum SchedulerTime
 {
-	NANOSECONDS(20 / 1000000000), MICROSECONDS(20 / 1000000), MILLISECONDS(20 / 1000), TICKS(1), SECONDS(20), MINUTES(1200), HOURS(72000), DAYS(1692000);
+	TICKS(1), SECONDS(20), MINUTES(1200), HOURS(72000), DAYS(1692000);
 
 	private final long ticks;
 

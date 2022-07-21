@@ -16,8 +16,6 @@ public interface Scheduler
 
 	ScheduledTask schedule(Runnable runnable, long delay, long period, SchedulerTime schedulerTime);
 
-	ScheduledTask schedule(Runnable runnable, long delay, long period, long repeat, SchedulerTime schedulerTime);
-
 	Object getOriginal();
 
 	boolean isBukkit();

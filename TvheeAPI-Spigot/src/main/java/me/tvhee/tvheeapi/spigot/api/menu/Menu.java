@@ -1,4 +1,4 @@
-package me.tvhee.tvheeapi.spigot.api.inventory;
+package me.tvhee.tvheeapi.spigot.api.menu;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,74 +7,98 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import me.tvhee.tvheeapi.api.TvheeAPI;
-import me.tvhee.tvheeapi.api.chat.MessageType;
 import me.tvhee.tvheeapi.api.chat.Component;
-import me.tvhee.tvheeapi.api.exception.TvheeAPIException;
-import me.tvhee.tvheeapi.api.player.Player;
 import me.tvhee.tvheeapi.api.plugin.TvheeAPIPlugin;
+import me.tvhee.tvheeapi.spigot.api.items.ItemBuilder;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.HandlerList;
-import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 
-public abstract class Inventory implements Listener
+public abstract class Menu implements InventoryHolder
 {
-	private final List<InventoryClickHandler> handlers = new ArrayList<>();
-	private final TvheeAPI api = TvheeAPI.getInstance();
 	private final Component name;
-	private final int size;
-	private final Player player;
+	private final Inventory inventory;
 	private final Map<Integer, ItemStack> contents = new HashMap<>();
 	private int maxStackSize = 64;
 	private ItemStack slotFiller = new ItemStack(Material.AIR);
-	private InventoryType inventoryType;
 	private boolean allowedToClose = true;
 	private boolean allowedToReplace = false;
 
-	Inventory(Component name, InventoryType inventoryType, Player player)
+	public Menu(Component name, InventoryType inventoryType)
 	{
 		this.name = name;
-		this.inventoryType = inventoryType;
-		this.player = player;
-		this.size = inventoryType.getDefaultSize();
-
-		api.getPluginManager().registerListener(this);
+		this.inventory = Bukkit.createInventory(this, inventoryType, name.toLegacyText());
 	}
 
-	Inventory(Component name, int size, Player player)
+	public Menu(Component name, int size)
 	{
 		this.name = name;
-		this.size = size;
-		this.player = player;
-
-		api.getPluginManager().registerListener(this);
+		this.inventory = Bukkit.createInventory(this, getSize(size), name.toLegacyText());
 	}
 
-	public void open()
+	public static boolean hasInventory(Player player)
 	{
-		org.bukkit.inventory.Inventory filled = fillInventory(getBukkitInventory(), new ArrayList<>());
-		Bukkit.getScheduler().scheduleSyncDelayedTask((Plugin) TvheeAPIPlugin.getPlugin(), () -> ((org.bukkit.entity.Player) player.getOriginal()).openInventory(filled), 1);
+		return getInventory(player) != null;
 	}
 
-	public void addClickHandler(InventoryClickHandler handler)
+	public static Menu getInventory(Player player)
 	{
-		this.handlers.add(handler);
+		return getInventory(player, Menu.class);
 	}
 
-	public void removeClickHandler(InventoryClickHandler handler)
+	public static <T extends Menu> T getInventory(Player player, Class<T> holderClass)
 	{
-		this.handlers.remove(handler);
+		InventoryView openInventory = player.getOpenInventory();
+
+		if(openInventory != null)
+		{
+			Inventory topInventory = openInventory.getTopInventory();
+
+			if(topInventory != null)
+			{
+				Menu menu = (Menu) topInventory.getHolder();
+
+				if(holderClass.isInstance(menu))
+					return (T) menu;
+			}
+		}
+
+		return null;
+	}
+
+	protected abstract void onMenuEvent(MenuEvent event);
+
+	public void open(Player player)
+	{
+		if(isViewing(player))
+			throw new IllegalArgumentException("Player is already viewing the inventory!");
+
+		update();
+
+		Bukkit.getScheduler().scheduleSyncDelayedTask((Plugin) TvheeAPIPlugin.getPlugin(), () -> player.openInventory(getInventory()), 1L);
+	}
+
+	public boolean isViewing(Player player)
+	{
+		InventoryView playerInventory = player.getOpenInventory();
+		return playerInventory != null && playerInventory.getTopInventory() != null && playerInventory.getTopInventory().getHolder().equals(this);
+	}
+
+	public void update()
+	{
+		Inventory inventory = getInventory();
+
+		for(int slot : getUsedSlots())
+		{
+			if(hasItem(slot))
+				inventory.setItem(slot, getItem(slot));
+		}
 	}
 
 	public Component getName()
@@ -82,14 +106,9 @@ public abstract class Inventory implements Listener
 		return name;
 	}
 
-	public Player getPlayer()
-	{
-		return player;
-	}
-
 	public InventoryType getInventoryType()
 	{
-		return inventoryType;
+		return inventory.getType();
 	}
 
 	public void setAllowedToClose(boolean allowedToClose)
@@ -114,7 +133,7 @@ public abstract class Inventory implements Listener
 
 	public int getSize()
 	{
-		return size;
+		return inventory.getSize();
 	}
 
 	public int getContentSize()
@@ -147,64 +166,34 @@ public abstract class Inventory implements Listener
 		return !this.contents.containsKey(slot);
 	}
 
-	public void setItem(int slot, Component name, Material material, List<Component> lore)
+	public void setItem(int slot, ItemBuilder item)
 	{
-		setItem(slot, buildStack(name, new ItemStack(material), lore));
-	}
-
-	public void setItem(int slot, Component name, ItemStack item, List<Component> lore)
-	{
-		setItem(slot, buildStack(name, item, lore));
-	}
-
-	public void setItem(int slot, Component name, ItemStack item)
-	{
-		setItem(slot, buildStack(name, item));
-	}
-
-	public void setItem(int slot, Component name, Material material)
-	{
-		setItem(slot, buildStack(name, new ItemStack(material)));
+		setItem(slot, item.toItem());
 	}
 
 	public void setItem(int slot, ItemStack item)
 	{
+		if(item == null)
+			return;
+
 		if(item.getAmount() > maxStackSize)
-			throw new TvheeAPIException(getClass(), "setSlot", "The item's amount is higher then the maxStackSize!");
+			throw new IllegalArgumentException("The item's amount is higher then the maxStackSize!");
 
-		if(slot > this.size && !(this instanceof PaginatedInventory))
-			throw new TvheeAPIException(getClass(), "setSlot", "The slots must be less then the size!");
-
-		if(this.contents.containsKey(slot))
-			throw new TvheeAPIException(getClass(), "setSlot", "You can only set one item and one permanent per slot!");
+		if(slot >= inventory.getSize() && !(this instanceof MenuPaginated))
+			throw new IllegalArgumentException("The slots must be less then the getSize!");
 
 		if(this.slotFiller.isSimilar(item))
-			throw new TvheeAPIException(getClass(), "setSlot", item + " is exactly the same as the slot filler!");
+			throw new IllegalArgumentException(item + " is the same as the slot filler!");
 
-		if(this.contents.size() + 1 > size)
-			throw new TvheeAPIException(getClass(), "setSlot", "There are too many items!");
+		if(this.contents.size() + 1 > inventory.getSize() && !(this instanceof MenuPaginated))
+			throw new IllegalArgumentException("There are too many items!");
 
 		this.contents.put(slot, item);
 	}
 
-	public void setSlotFiller(Component name, Material material, List<Component> lore)
+	public void setSlotFiller(ItemBuilder itemBuilder)
 	{
-		setSlotFiller(buildStack(name, new ItemStack(material), lore));
-	}
-
-	public void setSlotFiller(Component name, ItemStack item, List<Component> lore)
-	{
-		setSlotFiller(buildStack(name, item, lore));
-	}
-
-	public void setSlotFiller(Component name, ItemStack item)
-	{
-		setSlotFiller(buildStack(name, item));
-	}
-
-	public void setSlotFiller(Component name, Material material)
-	{
-		setSlotFiller(buildStack(name, new ItemStack(material)));
+		setSlotFiller(itemBuilder.toItem());
 	}
 
 	public void setSlotFiller(ItemStack slotFiller)
@@ -219,7 +208,7 @@ public abstract class Inventory implements Listener
 
 	public void addItems(ItemStack... items)
 	{
-		int max = this instanceof PaginatedInventory ? Integer.MAX_VALUE : size;
+		int max = this instanceof MenuPaginated ? Integer.MAX_VALUE : inventory.getSize();
 		int itemCount = 0;
 
 		for(int i = 0; i < max; i++)
@@ -313,6 +302,11 @@ public abstract class Inventory implements Listener
 		}
 
 		return false;
+	}
+
+	public boolean hasItem(int slot)
+	{
+		return this.contents.containsKey(slot);
 	}
 
 	public boolean containsExact(ItemStack itemStack, int amount)
@@ -458,95 +452,36 @@ public abstract class Inventory implements Listener
 		this.contents.clear();
 	}
 
-	protected void callClickEvent(me.tvhee.tvheeapi.spigot.api.inventory.InventoryClickEvent event)
+	@Override
+	public final Inventory getInventory()
 	{
-		for(InventoryClickHandler handler : this.handlers)
-			handler.onInventoryClick(event);
-	}
-
-	protected void destroy()
-	{
-		HandlerList.unregisterAll(this);
-		this.handlers.clear();
-	}
-
-	protected abstract void onInventoryClick(InventoryClickEvent e);
-
-	protected abstract org.bukkit.inventory.Inventory getBukkitInventory();
-
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void onBukkitInventoryClick(InventoryClickEvent e)
-	{
-		if(inventoryEquals(e.getView()) && e.getWhoClicked().equals(this.player))
-			onInventoryClick(e);
-	}
-
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void onBukkitInventoryClose(InventoryCloseEvent e)
-	{
-		if(inventoryEquals(e.getView()) && e.getPlayer().equals(this.player))
-		{
-			if(!allowedToClose)
-				open();
-			else
-				destroy();
-		}
-	}
-
-	protected org.bukkit.inventory.Inventory fillInventory(org.bukkit.inventory.Inventory inventory, List<Integer> excluded)
-	{
-		if(getSlotFiller() != null)
-		{
-			for(int i = 0; i < inventory.getSize(); i++)
-			{
-				if(excluded.contains(i))
-					continue;
-
-				if(inventory.getContents()[i] == null)
-					inventory.setItem(i, getSlotFiller());
-			}
-		}
-
 		return inventory;
 	}
 
-	protected ItemStack buildStack(Component name, ItemStack material, List<Component> lore)
+	final void callEvent(MenuEvent event)
 	{
-		ItemStack itemStack = material.clone();
-		ItemMeta meta = itemStack.getItemMeta();
-		meta.setDisplayName(name.toLegacyText(null));
+		onMenuEvent(event);
 
-		List<String> formattedLore = new ArrayList<>();
-
-		for(Component line : lore)
-			formattedLore.add(line.toLegacyText(null));
-
-		meta.setLore(formattedLore);
-		itemStack.setItemMeta(meta);
-		return itemStack;
-	}
-
-	protected ItemStack buildStack(Component name, ItemStack material)
-	{
-		ItemStack itemStack = material.clone();
-		ItemMeta meta = itemStack.getItemMeta();
-		meta.setDisplayName(name.toLegacyText(null));
-		itemStack.setItemMeta(meta);
-		return itemStack;
-	}
-
-	private boolean inventoryEquals(InventoryView view)
-	{
-		char[] chars = ChatColor.stripColor(view.getTitle()).toCharArray();
-		char[] org = ChatColor.stripColor(name.toLegacyText(MessageType.INVENTORY_LINE)).toCharArray();
-
-		for(int i = 0; i < chars.length; i++)
+		if(event.willClose() || event.getRedirect() != null)
 		{
-			if(chars[i] != org[i])
-				return false;
-		}
+			Player player = event.getPlayer();
+			setAllowedToClose(true);
+			Bukkit.getScheduler().runTaskLater((Plugin) TvheeAPIPlugin.getPlugin(), player::closeInventory, 1L);
 
-		return true;
+			if(event.getRedirect() != null)
+				event.getRedirect().open(player);
+		}
+	}
+
+	private int getSize(int size)
+	{
+		while(size % 9 != 0)
+			size++;
+
+		if(size > 54)
+			size = 54;
+
+		return size;
 	}
 
 	public enum SlotType

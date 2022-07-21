@@ -10,12 +10,10 @@ public final class DurabilityCalculator
 	private final ItemStack item;
 	private boolean broken;
 
-	public DurabilityCalculator(ItemStack item, int durability)
+	public DurabilityCalculator(ItemStack item)
 	{
 		this.dataContainer = new DataContainer(item.getItemMeta().getPersistentDataContainer());
 		this.item = item;
-
-		setMaxDurability(durability);
 	}
 
 	public void setMaxDurability(int durabilityItem)
@@ -52,10 +50,10 @@ public final class DurabilityCalculator
 			return;
 		}
 
-		Damageable im = (Damageable) item.getItemMeta();
-		im.setDamage(0);
-		im.setDamage(newDamage);
-		item.setItemMeta((ItemMeta) im);
+		Damageable itemMeta = (Damageable) item.getItemMeta();
+		itemMeta.setDamage(0);
+		itemMeta.setDamage(newDamage);
+		item.setItemMeta(itemMeta);
 
 		dataContainer.addDouble("durability", newDurability);
 		item.setItemMeta((ItemMeta) dataContainer.getDataHolder());

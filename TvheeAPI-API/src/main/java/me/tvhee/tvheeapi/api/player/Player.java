@@ -29,7 +29,7 @@ public interface Player extends CommandSender
 		return false;
 	}
 
-	public enum MainHand
+	enum MainHand
 	{
 		LEFT, RIGHT
 	}

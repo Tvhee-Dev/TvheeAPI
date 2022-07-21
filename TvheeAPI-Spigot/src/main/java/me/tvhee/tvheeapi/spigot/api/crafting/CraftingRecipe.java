@@ -30,23 +30,27 @@ public final class CraftingRecipe
 		this.result = result;
 	}
 
-	public void removeIngredient(CraftingPlace place)
+	public CraftingRecipe removeIngredient(CraftingPlace place)
 	{
 		ingredients.remove(place.getKey());
+		return this;
 	}
 
-	public void setIngredient(CraftingPlace place, ItemStack ingredient)
+	public CraftingRecipe setIngredient(CraftingPlace place, ItemStack ingredient)
 	{
 		if(ingredient == null)
 			throw new IllegalArgumentException("Please use removeIngredient(CraftingPlace) to remove any ingredient!");
 
 		ingredients.put(place.getKey(), ingredient);
+		return this;
 	}
 
-	public void setIngredients(Map<CraftingPlace, ItemStack> ingredients)
+	public CraftingRecipe setIngredients(Map<CraftingPlace, ItemStack> ingredients)
 	{
 		for(Entry<CraftingPlace, ItemStack> entry : ingredients.entrySet())
 			this.ingredients.put(entry.getKey().getKey(), entry.getValue());
+
+		return this;
 	}
 
 	public void register()

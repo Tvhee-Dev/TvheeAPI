@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import me.tvhee.simplereflection.Reflection;
 import me.tvhee.tvheeapi.api.chat.MessageType;
 import me.tvhee.tvheeapi.api.command.Arguments;
 import me.tvhee.tvheeapi.api.command.CommandExecutor;
@@ -13,8 +14,6 @@ import me.tvhee.tvheeapi.api.event.Event;
 import me.tvhee.tvheeapi.api.exception.TvheeAPIException;
 import me.tvhee.tvheeapi.api.exception.TvheeAPIInternalException;
 import me.tvhee.tvheeapi.api.plugin.PluginManager;
-import me.tvhee.tvheeapi.api.reflection.Reflection;
-import me.tvhee.tvheeapi.api.serverping.ServerPing;
 import me.tvhee.tvheeapi.api.updater.SpigotUpdateChecker;
 import me.tvhee.tvheeapi.bungee.api.event.BungeeEvent;
 import me.tvhee.tvheeapi.bungee.api.event.BungeeListener;
@@ -27,7 +26,6 @@ public final class BungeePluginManager implements PluginManager
 {
 	private final BungeePluginLoader bungeePluginLoader;
 	private final Map<CommandInformation, CommandExecutor> registeredCommands = new HashMap<>();
-	private ServerPing serverPing;
 	private SpigotUpdateChecker spigotUpdateChecker;
 
 	public BungeePluginManager(BungeePluginLoader bungeePluginLoader)
@@ -61,7 +59,7 @@ public final class BungeePluginManager implements PluginManager
 		};
 
 		if(command.getNoPermissionMessage() != null)
-			new Reflection(bungeeCommand).setField("permissionMessage", command.getNoPermissionMessage().toLegacyText(MessageType.CHAT_LINE));
+			new Reflection(bungeeCommand).field("permissionMessage", command.getNoPermissionMessage().toLegacyText(MessageType.CHAT_LINE));
 
 		bungeePluginLoader.getProxy().getPluginManager().registerCommand(bungeePluginLoader, bungeeCommand);
 		registeredCommands.put(command, commandExecutor);
@@ -131,18 +129,6 @@ public final class BungeePluginManager implements PluginManager
 		{
 			throw new TvheeAPIInternalException(getClass(), "callEventAsync", e);
 		}
-	}
-
-	@Override
-	public ServerPing getServerPing()
-	{
-		return this.serverPing;
-	}
-
-	@Override
-	public void setServerPing(ServerPing serverPing)
-	{
-		this.serverPing = serverPing;
 	}
 
 	@Override

@@ -5,10 +5,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import me.tvhee.simplereflection.Reflection;
 import me.tvhee.tvheeapi.api.config.CommentLoader;
 import me.tvhee.tvheeapi.api.config.Configuration;
 import me.tvhee.tvheeapi.api.config.ConfigurationSerializable;
-import me.tvhee.tvheeapi.api.reflection.Reflection;
 import me.tvhee.tvheeapi.core.ConfigurationSerialization;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -77,6 +77,7 @@ public final class BukkitConfiguration implements Configuration
 		if(object instanceof Map)
 		{
 			Map<String, Object> valuesMap = (Map<String, Object>) object;
+
 			if(valuesMap.containsKey("=="))
 				return ConfigurationSerialization.deserialize(valuesMap);
 		}
@@ -195,7 +196,7 @@ public final class BukkitConfiguration implements Configuration
 	@Override
 	public byte getByte(String path)
 	{
-		Object def = new Reflection(bukkitConfiguration).invokeMethod("getDefault", path).getObject();
+		Object def = new Reflection(bukkitConfiguration).method("getDefault", path).object();
 		return getByte(path, def instanceof Number ? ((Number) def).byteValue() : 0);
 	}
 
@@ -209,7 +210,7 @@ public final class BukkitConfiguration implements Configuration
 	@Override
 	public short getShort(String path)
 	{
-		Object def = new Reflection(bukkitConfiguration).invokeMethod("getDefault", path).getObject();
+		Object def = new Reflection(bukkitConfiguration).method("getDefault", path).object();
 		return getShort(path, def instanceof Number ? ((Number) def).shortValue() : 0);
 	}
 
@@ -223,7 +224,7 @@ public final class BukkitConfiguration implements Configuration
 	@Override
 	public float getFloat(String path)
 	{
-		Object def = new Reflection(bukkitConfiguration).invokeMethod("getDefault", path).getObject();
+		Object def = new Reflection(bukkitConfiguration).method("getDefault", path).object();
 		return getFloat(path, def instanceof Number ? ((Number) def).floatValue() : 0.0F);
 	}
 
@@ -237,7 +238,7 @@ public final class BukkitConfiguration implements Configuration
 	@Override
 	public char getChar(String path)
 	{
-		Object def = new Reflection(bukkitConfiguration).invokeMethod("getDefault", path).getObject();
+		Object def = new Reflection(bukkitConfiguration).method("getDefault", path).object();
 		return getChar(path, def instanceof Character ? (Character) def : '\u0000');
 	}
 

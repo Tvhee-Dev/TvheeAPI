@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import me.tvhee.simplereflection.Reflection;
 import me.tvhee.tvheeapi.api.chat.MessageType;
 import me.tvhee.tvheeapi.api.command.Arguments;
 import me.tvhee.tvheeapi.api.command.CommandExecutor;
@@ -16,8 +17,6 @@ import me.tvhee.tvheeapi.api.exception.TvheeAPIInternalException;
 import me.tvhee.tvheeapi.api.player.Player;
 import me.tvhee.tvheeapi.api.plugin.PluginManager;
 import me.tvhee.tvheeapi.api.plugin.TvheeAPIPlugin;
-import me.tvhee.tvheeapi.api.reflection.Reflection;
-import me.tvhee.tvheeapi.api.serverping.ServerPing;
 import me.tvhee.tvheeapi.api.updater.SpigotUpdateChecker;
 import me.tvhee.tvheeapi.spigot.api.event.BukkitEvent;
 import me.tvhee.tvheeapi.spigot.api.event.SpigotListener;
@@ -30,7 +29,6 @@ public final class BukkitPluginManager implements PluginManager
 {
 	private final BukkitPluginLoader bukkitPluginLoader;
 	private final Map<CommandInformation, CommandExecutor> registeredCommands = new HashMap<>();
-	private ServerPing serverPing;
 	private SpigotUpdateChecker spigotUpdateChecker;
 
 	public BukkitPluginManager(BukkitPluginLoader bukkitPluginLoader)
@@ -81,7 +79,7 @@ public final class BukkitPluginManager implements PluginManager
 		if(command.getNoPermissionMessage() != null)
 			bukkitCommand.setPermissionMessage(command.getNoPermissionMessage().toLegacyText(MessageType.CHAT_LINE));
 
-		SimpleCommandMap commandMap = new Reflection(this.bukkitPluginLoader.getServer()).getField("commandMap").getObject();
+		SimpleCommandMap commandMap = new Reflection(this.bukkitPluginLoader.getServer()).field("commandMap").object();
 		commandMap.clearCommands();
 		commandMap.register(TvheeAPIPlugin.getInstance().getDescription().getPluginName(), bukkitCommand);
 
@@ -153,18 +151,6 @@ public final class BukkitPluginManager implements PluginManager
 		{
 			throw new TvheeAPIInternalException(getClass(), "callEventAsync", e);
 		}
-	}
-
-	@Override
-	public ServerPing getServerPing()
-	{
-		return this.serverPing;
-	}
-
-	@Override
-	public void setServerPing(ServerPing serverPing)
-	{
-		this.serverPing = serverPing;
 	}
 
 	@Override

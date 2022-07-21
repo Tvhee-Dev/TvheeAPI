@@ -1,7 +1,6 @@
 package me.tvhee.tvheeapi.bungee.core;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import me.tvhee.tvheeapi.api.scheduler.ScheduledTask;
 import me.tvhee.tvheeapi.api.scheduler.Scheduler;
 import me.tvhee.tvheeapi.api.scheduler.SchedulerTime;
@@ -58,29 +57,6 @@ public final class BungeeScheduler implements Scheduler
 	public ScheduledTask schedule(Runnable runnable, long delay, long period, SchedulerTime schedulerTime)
 	{
 		return new BungeeTask(bungeeScheduler.schedule(bungeePluginLoader, runnable, SchedulerTime.calculateSeconds(schedulerTime, delay), SchedulerTime.calculateSeconds(schedulerTime, period), TimeUnit.SECONDS));
-	}
-
-	@Override
-	public ScheduledTask schedule(Runnable runnable, long delay, long period, long repeat, SchedulerTime schedulerTime)
-	{
-		ScheduledTask task = schedule(runnable, delay, period, schedulerTime);
-		AtomicLong repeatedTimes = new AtomicLong();
-		ScheduledTask repeatingTask = schedule(() ->
-		{
-			if(task.isCancelled() || repeatedTimes.get() >= repeat)
-				cancel(task);
-
-			repeatedTimes.set(repeatedTimes.get() + 1);
-		}, delay, period, schedulerTime);
-
-		schedule(() ->
-		{
-			if(!task.isCancelled())
-				cancel(task);
-
-			cancel(repeatingTask);
-		}, delay + (period * repeat), schedulerTime);
-		return task;
 	}
 
 	@Override

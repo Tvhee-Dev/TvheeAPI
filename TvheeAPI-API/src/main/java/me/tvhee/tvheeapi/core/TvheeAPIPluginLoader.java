@@ -15,18 +15,17 @@ import me.tvhee.tvheeapi.api.description.PluginLoader;
 import me.tvhee.tvheeapi.api.exception.TvheeAPIException;
 import me.tvhee.tvheeapi.api.exception.TvheeAPIInternalException;
 import me.tvhee.tvheeapi.api.plugin.TvheeAPIPlugin;
-import me.tvhee.tvheeapi.api.reflection.Reflection;
 import org.yaml.snakeyaml.Yaml;
 
 public final class TvheeAPIPluginLoader
 {
 	private static boolean instanceCreated = false;
-	private final TvheeAPILoader module;
+	private final TvheeAPIModule module;
 	private final PluginDescription description;
 	private final TvheeAPIPlugin plugin;
 	private final TvheeAPILogger tvheeApiLogger;
 
-	public TvheeAPIPluginLoader(TvheeAPILoader module)
+	public TvheeAPIPluginLoader(TvheeAPIModule module)
 	{
 		if(instanceCreated)
 			throw new TvheeAPIException(getClass(), "init", "Please do not create instances of PluginLoader(s)!");
@@ -127,7 +126,7 @@ public final class TvheeAPIPluginLoader
 			Class<? extends T> apiCommand = commandClass.asSubclass(expected);
 			Constructor<?> constructor = apiCommand.getConstructor();
 			constructor.setAccessible(true);
-			return Reflection.newInstance(apiCommand).getObject();
+			return apiCommand.getConstructor().newInstance();
 		}
 		catch(ClassNotFoundException e)
 		{
@@ -137,7 +136,7 @@ public final class TvheeAPIPluginLoader
 		{
 			throw new TvheeAPIException(getClass(), "onEnable", falseMessage.replaceAll("%expected%", expected.toString()).replaceAll("%class%", clazz));
 		}
-		catch(NoSuchMethodException e)
+		catch(NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e)
 		{
 			throw new TvheeAPIException(getClass(), "onEnable", "Class " + clazz + " must have a no args constructor!");
 		}
@@ -217,7 +216,7 @@ public final class TvheeAPIPluginLoader
 		return null;
 	}
 
-	private TvheeAPIPlugin init(String main)
+	private me.tvhee.tvheeapi.api.plugin.TvheeAPIPlugin init(String main)
 	{
 		try
 		{
