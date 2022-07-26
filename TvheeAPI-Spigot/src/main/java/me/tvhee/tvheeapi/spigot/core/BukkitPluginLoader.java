@@ -75,13 +75,6 @@ public final class BukkitPluginLoader extends JavaPlugin implements TvheeAPIModu
 	@Override
 	public void onEnable()
 	{
-		if(!tvheeAPIPluginLoader.getDescription().getApiVersion().isSupported())
-		{
-			this.tvheeAPIPluginLoader.getApiLogger().warning("-------------- WARNING ---------------");
-			this.tvheeAPIPluginLoader.getApiLogger().warning("Version " + tvheeAPIPluginLoader.getDescription().getApiVersion() + " is not supported!");
-			this.tvheeAPIPluginLoader.getApiLogger().warning("--------------------------------------");
-		}
-
 		this.tvheeAPIPluginLoader.enablePlugin();
 		getServer().getPluginManager().registerEvents(new MenuListener(), this);
 

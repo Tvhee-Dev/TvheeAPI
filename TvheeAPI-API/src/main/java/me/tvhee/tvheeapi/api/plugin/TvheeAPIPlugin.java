@@ -57,7 +57,14 @@ public abstract class TvheeAPIPlugin
 
 	public final void onLoad()
 	{
-		this.config = new ConfigFile(getDataFolder(), "config.yml");
+		try
+		{
+			this.config = new ConfigFile(getDataFolder(), "config.yml");
+		}
+		catch(IllegalArgumentException e)
+		{
+			this.config = null;
+		}
 
 		onPluginLoad();
 	}
@@ -80,21 +87,25 @@ public abstract class TvheeAPIPlugin
 
 	public final Configuration getConfig()
 	{
+		checkConfigNotNull();
 		return config.getConfig();
 	}
 
 	public final void reloadConfig()
 	{
+		checkConfigNotNull();
 		config.reloadConfig();
 	}
 
 	public final void saveConfig()
 	{
+		checkConfigNotNull();
 		config.saveConfig();
 	}
 
 	public final void saveDefaultConfig()
 	{
+		checkConfigNotNull();
 		config.saveDefaultConfig();
 	}
 
@@ -141,5 +152,11 @@ public abstract class TvheeAPIPlugin
 	public final TvheeAPI getApi()
 	{
 		return TvheeAPI.getInstance();
+	}
+
+	private void checkConfigNotNull()
+	{
+		if(config == null)
+			throw new IllegalArgumentException("If you would like to use the config.yml file please include it in your resources folder!");
 	}
 }
