@@ -57,19 +57,24 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 				case COMMAND :
 				{
 					TypeElement commandTypeElement = checkType(element, CommandExecutor.class);
-					commands.add(commandTypeElement.getQualifiedName().toString());
+
+					if(commandTypeElement != null)
+						commands.add(commandTypeElement.getQualifiedName().toString());
 				}
 				case BUNGEE_LISTENER :
 				{
 					TypeElement bungeeListenerTypeElement = checkType(element, BungeeListener.class);
-					bungeeListeners.add(bungeeListenerTypeElement.getQualifiedName().toString());
+
+					if(bungeeListenerTypeElement != null)
+						bungeeListeners.add(bungeeListenerTypeElement.getQualifiedName().toString());
 				}
 				case SPIGOT_LISTENER :
 				{
 					TypeElement spigotListenerTypeElement = checkType(element, SpigotListener.class);
-					spigotListeners.add(spigotListenerTypeElement.getQualifiedName().toString());
+
+					if(spigotListenerTypeElement != null)
+						spigotListeners.add(spigotListenerTypeElement.getQualifiedName().toString());
 				}
-				default : throw new IllegalArgumentException("Unexpected value: " + registrationType);
 			}
 		}
 
@@ -96,7 +101,7 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 			}
 		}
 
-		final Set<? extends Element> mainElements = roundEnvironment.getElementsAnnotatedWith(PluginMain.class);
+		Set<? extends Element> mainElements = roundEnvironment.getElementsAnnotatedWith(PluginMain.class);
 
 		if(mainElements.size() > 1)
 		{
@@ -107,7 +112,7 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 		if(mainElements.isEmpty())
 			return false;
 
-		final TypeElement mainPluginType = checkType(mainElements.iterator().next(), TvheeAPIPlugin.class);
+		TypeElement mainPluginType = checkType(mainElements.iterator().next(), TvheeAPIPlugin.class);
 
 		if(mainPluginType == null)
 			return false;
@@ -118,28 +123,26 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 		return true;
 	}
 
-	private void getAndSavePluginFile(final PluginLoader main, final String apiMainClass, final PluginMain pluginMain, final List<String> spigotListeners, final List<String> bungeeListeners, final List<String> commands)
+	private void getAndSavePluginFile(PluginLoader main, String apiMainClass, PluginMain pluginMain, List<String> spigotListeners, List<String> bungeeListeners,  List<String> commands)
 	{
-		if(main == PluginLoader.BUKKIT_PLUGIN && !pluginMain.bukkitSupport())
-			return;
-		else if(main == PluginLoader.BUNGEE_PLUGIN && !pluginMain.bungeeSupport())
+		if(main == PluginLoader.BUKKIT_PLUGIN && !pluginMain.bukkitSupport() || main == PluginLoader.BUNGEE_PLUGIN && !pluginMain.bungeeSupport())
 			return;
 
-		final Map<String, Object> yml = new LinkedHashMap<>();
+		Map<String, Object> yml = new LinkedHashMap<>();
 
-		final String pluginName = pluginMain.pluginName();
-		final String version = pluginMain.version();
-		final ApiVersion apiVersion = pluginMain.apiVersion();
-		final String description = pluginMain.description();
-		final PluginLoadOrder pluginLoadOrder = pluginMain.loadOrder();
-		final String[] authorsArray = pluginMain.authors();
-		final String website = pluginMain.website();
-		final String prefix = pluginMain.logPrefix();
-		final String[] hardDependenciesArray = pluginMain.dependencies();
-		final String[] softDependenciesArray = pluginMain.softDependencies();
-		final String[] loadBeforeArray = pluginMain.loadBefore();
-		final String[] libraries = pluginMain.mavenCentralLibraries();
-		final Permission[] permissions = pluginMain.permissions();
+		String pluginName = pluginMain.pluginName();
+		String version = pluginMain.version();
+		ApiVersion apiVersion = pluginMain.apiVersion();
+		String description = pluginMain.description();
+		PluginLoadOrder pluginLoadOrder = pluginMain.loadOrder();
+		String[] authorsArray = pluginMain.authors();
+		String website = pluginMain.website();
+		String prefix = pluginMain.logPrefix();
+		String[] hardDependenciesArray = pluginMain.dependencies();
+		String[] softDependenciesArray = pluginMain.softDependencies();
+		String[] loadBeforeArray = pluginMain.loadBefore();
+		String[] libraries = pluginMain.mavenCentralLibraries();
+		Permission[] permissions = pluginMain.permissions();
 
 		yml.put("name", pluginName.equals("") ? "AnTvheeAPIPlugin" : pluginName);
 		yml.put("main", main.toString());
@@ -152,7 +155,7 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 
 		yml.put("load", pluginLoadOrder.toString());
 
-		final List<String> authors = Arrays.asList(authorsArray);
+		List<String> authors = Arrays.asList(authorsArray);
 
 		if(!authors.isEmpty())
 		{
@@ -189,26 +192,29 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 			if(!children.isEmpty())
 				thisPermission.put("children", children);
 
-			if(!thisPermission.isEmpty())
-				permissionsMap.put(permission.name(), thisPermission);
+			permissionsMap.put(permission.name(), thisPermission);
 		}
 
 		if(!permissionsMap.isEmpty())
 			yml.put("permissions", permissionsMap);
 
-		final List<String> hardDependencies = Arrays.asList(hardDependenciesArray);
+		List<String> hardDependencies = Arrays.asList(hardDependenciesArray);
+
 		if(!hardDependencies.isEmpty())
 			yml.put("depend", hardDependencies);
 
-		final List<String> softDependencies = Arrays.asList(softDependenciesArray);
+		List<String> softDependencies = Arrays.asList(softDependenciesArray);
+
 		if(!softDependencies.isEmpty())
 			yml.put("softdepend", softDependencies);
 
-		final List<String> loadBefore = Arrays.asList(loadBeforeArray);
+		List<String> loadBefore = Arrays.asList(loadBeforeArray);
+
 		if(!loadBefore.isEmpty())
 			yml.put("loadbefore", loadBefore);
 
-		final List<String> librariesList = Arrays.asList(libraries);
+		List<String> librariesList = Arrays.asList(libraries);
+
 		if(!librariesList.isEmpty())
 			yml.put("libraries", librariesList);
 
@@ -223,9 +229,9 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 
 		try
 		{
-			final String pluginBungeeYml = main == PluginLoader.BUKKIT_PLUGIN ? "plugin.yml" : "bungee.yml";
-			final Yaml yaml = new Yaml();
-			final FileObject file = this.processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", pluginBungeeYml);
+			String pluginBungeeYml = main == PluginLoader.BUKKIT_PLUGIN ? "plugin.yml" : "bungee.yml";
+			Yaml yaml = new Yaml();
+			FileObject file = this.processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", pluginBungeeYml);
 
 			try(Writer writer = file.openWriter())
 			{
@@ -243,7 +249,7 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 
 	private TypeElement checkType(Element element, Class<?> parent)
 	{
-		final TypeElement typeElement;
+		TypeElement typeElement;
 
 		if(element instanceof TypeElement)
 		{
