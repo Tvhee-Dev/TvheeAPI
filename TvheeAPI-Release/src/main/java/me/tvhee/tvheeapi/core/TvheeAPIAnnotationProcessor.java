@@ -43,6 +43,8 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment)
 	{
+		logMessage("[TvheeAPI] Started processing annotations...");
+
 		List<String> bungeeListeners = new ArrayList<>();
 		List<String> spigotListeners = new ArrayList<>();
 		List<String> commands = new ArrayList<>();
@@ -120,12 +122,13 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 		getAndSavePluginFile(PluginLoader.BUKKIT_PLUGIN, mainPluginType.getQualifiedName().toString(), mainPluginType.getAnnotation(PluginMain.class), spigotListeners, bungeeListeners, commands);
 		getAndSavePluginFile(PluginLoader.BUNGEE_PLUGIN, mainPluginType.getQualifiedName().toString(), mainPluginType.getAnnotation(PluginMain.class), spigotListeners, bungeeListeners, commands);
 
+		logMessage("[TvheeAPI] Finished processing annotations!");
 		return true;
 	}
 
 	private void getAndSavePluginFile(PluginLoader main, String apiMainClass, PluginMain pluginMain, List<String> spigotListeners, List<String> bungeeListeners,  List<String> commands)
 	{
-		if(main == PluginLoader.BUKKIT_PLUGIN && !pluginMain.bukkitSupport() || main == PluginLoader.BUNGEE_PLUGIN && !pluginMain.bungeeSupport())
+		if((main == PluginLoader.BUKKIT_PLUGIN && !pluginMain.bukkitSupport()) || (main == PluginLoader.BUNGEE_PLUGIN && !pluginMain.bungeeSupport()))
 			return;
 
 		Map<String, Object> yml = new LinkedHashMap<>();
@@ -239,6 +242,8 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 				String raw = yaml.dumpAs(yml, Tag.MAP, DumperOptions.FlowStyle.BLOCK);
 				writer.write(raw);
 				writer.flush();
+
+				logMessage("[TvheeAPI] Generated " + pluginBungeeYml + "!");
 			}
 		}
 		catch(IOException e)
@@ -280,6 +285,11 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 		}
 
 		return typeElement;
+	}
+
+	private void logMessage(String message)
+	{
+		this.processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, message);
 	}
 
 	private void throwError(String message)
