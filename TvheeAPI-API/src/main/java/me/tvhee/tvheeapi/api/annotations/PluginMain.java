@@ -3,6 +3,10 @@ package me.tvhee.tvheeapi.api.annotations;
 import me.tvhee.tvheeapi.api.description.ApiVersion;
 import me.tvhee.tvheeapi.api.description.PluginLoadOrder;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
+@Target(ElementType.TYPE)
 public @interface PluginMain
 {
 	String pluginName();
@@ -11,9 +15,7 @@ public @interface PluginMain
 
 	ApiVersion apiVersion();
 
-	boolean bungeeSupport();
-
-	boolean bukkitSupport();
+	Support support() default Support.BUKKIT_ONLY;
 
 	String description() default "";
 

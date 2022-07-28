@@ -24,18 +24,10 @@ public enum PluginLoader
 	{
 		switch(pluginLoader)
 		{
-			case "me.tvhee.tvheeapi.spigot.core.BukkitPluginLoader":
-			{
-				return PluginLoader.BUKKIT_PLUGIN;
-			}
-			case "me.tvhee.tvheeapi.bungee.core.BungeePluginLoader":
-			{
-				return PluginLoader.BUNGEE_PLUGIN;
-			}
-			default:
-			{
-				throw new TvheeAPIInternalException(PluginLoader.class, "fromString", "PluginLoader not" + " found!");
-			}
+			case "me.tvhee.tvheeapi.spigot.core.BukkitPluginLoader": return PluginLoader.BUKKIT_PLUGIN;
+			case "me.tvhee.tvheeapi.bungee.core.BungeePluginLoader": return PluginLoader.BUNGEE_PLUGIN;
 		}
+
+		return null;
 	}
 }

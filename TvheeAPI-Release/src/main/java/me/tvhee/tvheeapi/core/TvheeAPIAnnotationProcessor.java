@@ -21,11 +21,13 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
+
 import me.tvhee.tvheeapi.api.annotations.Permission;
 import me.tvhee.tvheeapi.api.annotations.PluginMain;
 import me.tvhee.tvheeapi.api.annotations.Register;
-import me.tvhee.tvheeapi.api.annotations.RegistrationType;
 import me.tvhee.tvheeapi.api.annotations.Require;
+import me.tvhee.tvheeapi.api.annotations.RegistrationType;
+import me.tvhee.tvheeapi.api.annotations.Support;
 import me.tvhee.tvheeapi.api.command.CommandExecutor;
 import me.tvhee.tvheeapi.api.description.ApiVersion;
 import me.tvhee.tvheeapi.api.description.PluginLoadOrder;
@@ -43,7 +45,24 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment)
 	{
-		logMessage("[TvheeAPI] Started processing annotations...");
+		Set<? extends Element> mainElements = roundEnvironment.getElementsAnnotatedWith(PluginMain.class);
+
+		if(mainElements.size() > 1)
+		{
+			throwError("You can only annotate your main once!");
+			return false;
+		}
+
+		if(mainElements.isEmpty())
+			return false;
+
+		TypeElement mainPluginType = checkType(mainElements.iterator().next(), TvheeAPIPlugin.class);
+
+		if(mainPluginType == null)
+			return false;
+
+		PluginMain pluginMain = mainPluginType.getAnnotation(PluginMain.class);
+		Support support = pluginMain.support();
 
 		List<String> bungeeListeners = new ArrayList<>();
 		List<String> spigotListeners = new ArrayList<>();
@@ -65,6 +84,9 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 				}
 				case BUNGEE_LISTENER :
 				{
+					if(support == Support.BUKKIT_ONLY)
+						continue;
+
 					TypeElement bungeeListenerTypeElement = checkType(element, BungeeListener.class);
 
 					if(bungeeListenerTypeElement != null)
@@ -72,6 +94,9 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 				}
 				case SPIGOT_LISTENER :
 				{
+					if(support == Support.BUNGEE_ONLY)
+						continue;
+
 					TypeElement spigotListenerTypeElement = checkType(element, SpigotListener.class);
 
 					if(spigotListenerTypeElement != null)
@@ -103,36 +128,16 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 			}
 		}
 
-		Set<? extends Element> mainElements = roundEnvironment.getElementsAnnotatedWith(PluginMain.class);
-
-		if(mainElements.size() > 1)
-		{
-			throwError("You can only annotate your main once!");
-			return false;
-		}
-
-		if(mainElements.isEmpty())
-			return false;
-
-		TypeElement mainPluginType = checkType(mainElements.iterator().next(), TvheeAPIPlugin.class);
-
-		if(mainPluginType == null)
-			return false;
-
-		getAndSavePluginFile(PluginLoader.BUKKIT_PLUGIN, mainPluginType.getQualifiedName().toString(), mainPluginType.getAnnotation(PluginMain.class), spigotListeners, bungeeListeners, commands);
-		getAndSavePluginFile(PluginLoader.BUNGEE_PLUGIN, mainPluginType.getQualifiedName().toString(), mainPluginType.getAnnotation(PluginMain.class), spigotListeners, bungeeListeners, commands);
-
+		getAndSavePluginFile(mainPluginType.getQualifiedName().toString(), mainPluginType.getAnnotation(PluginMain.class), spigotListeners, bungeeListeners, commands);
 		logMessage("[TvheeAPI] Finished processing annotations!");
 		return true;
 	}
 
-	private void getAndSavePluginFile(PluginLoader main, String apiMainClass, PluginMain pluginMain, List<String> spigotListeners, List<String> bungeeListeners,  List<String> commands)
+	private void getAndSavePluginFile(String apiMainClass, PluginMain pluginMain, List<String> spigotListeners, List<String> bungeeListeners, List<String> commands)
 	{
-		if((main == PluginLoader.BUKKIT_PLUGIN && !pluginMain.bukkitSupport()) || (main == PluginLoader.BUNGEE_PLUGIN && !pluginMain.bungeeSupport()))
-			return;
-
 		Map<String, Object> yml = new LinkedHashMap<>();
 
+		Support support = pluginMain.support();
 		String pluginName = pluginMain.pluginName();
 		String version = pluginMain.version();
 		ApiVersion apiVersion = pluginMain.apiVersion();
@@ -148,7 +153,6 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 		Permission[] permissions = pluginMain.permissions();
 
 		yml.put("name", pluginName.equals("") ? "AnTvheeAPIPlugin" : pluginName);
-		yml.put("main", main.toString());
 		yml.put("api-main", apiMainClass);
 		yml.put("version", version);
 		yml.put("api-version", apiVersion.toString());
@@ -232,18 +236,26 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 
 		try
 		{
-			String pluginBungeeYml = main == PluginLoader.BUKKIT_PLUGIN ? "plugin.yml" : "bungee.yml";
-			Yaml yaml = new Yaml();
-			FileObject file = this.processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", pluginBungeeYml);
-
-			try(Writer writer = file.openWriter())
+			for(PluginLoader pluginLoader : PluginLoader.values())
 			{
-				writer.append("#Auto-generated ").append(pluginBungeeYml).append(", generated at ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))).append(" by ").append(this.getClass().getName()).append("\n");
-				String raw = yaml.dumpAs(yml, Tag.MAP, DumperOptions.FlowStyle.BLOCK);
-				writer.write(raw);
-				writer.flush();
+				if((pluginLoader == PluginLoader.BUKKIT_PLUGIN && support == Support.BUNGEE_ONLY) || (pluginLoader == PluginLoader.BUNGEE_PLUGIN && support == Support.BUKKIT_ONLY))
+					continue;
 
-				logMessage("[TvheeAPI] Generated " + pluginBungeeYml + "!");
+				yml.put("main", pluginLoader.toString());
+
+				String pluginBungeeYml = pluginLoader == PluginLoader.BUKKIT_PLUGIN ? "plugin.yml" : "bungee.yml";
+				Yaml yaml = new Yaml();
+				FileObject file = this.processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", pluginBungeeYml);
+
+				try (Writer writer = file.openWriter())
+				{
+					writer.append("#Auto-generated ").append(pluginBungeeYml).append(", generated at ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))).append(" by ").append(this.getClass().getName()).append("\n");
+					String raw = yaml.dumpAs(yml, Tag.MAP, DumperOptions.FlowStyle.BLOCK);
+					writer.write(raw);
+					writer.flush();
+
+					logMessage("[TvheeAPI] Generated " + pluginBungeeYml + "!");
+				}
 			}
 		}
 		catch(IOException e)
@@ -289,16 +301,16 @@ public final class TvheeAPIAnnotationProcessor extends AbstractProcessor
 
 	private void logMessage(String message)
 	{
-		this.processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, message);
+		this.processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, message + "\r\n");
 	}
 
 	private void throwError(String message)
 	{
-		this.processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message);
+		this.processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message + "\r\n");
 	}
 
 	private void throwError(String message, Element element)
 	{
-		this.processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
+		this.processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message + "\r\n", element);
 	}
 }
